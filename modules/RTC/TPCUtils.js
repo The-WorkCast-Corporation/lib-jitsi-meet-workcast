@@ -89,9 +89,9 @@ export class TPCUtils {
         return [
             {
                 active: true,
-                maxBitrate: browser.isFirefox() ? maxVideoBitrate : this.encodingBitrates.low,
+                maxBitrate: this.encodingBitrates.low,
                 rid: SIM_LAYER_1_RID,
-                scaleResolutionDownBy: browser.isFirefox() ? HD_SCALE_FACTOR : LD_SCALE_FACTOR
+                scaleResolutionDownBy: LD_SCALE_FACTOR
             },
             {
                 active: true,
@@ -101,9 +101,9 @@ export class TPCUtils {
             },
             {
                 active: true,
-                maxBitrate: browser.isFirefox() ? this.encodingBitrates.low : maxVideoBitrate,
+                maxBitrate: maxVideoBitrate,
                 rid: SIM_LAYER_3_RID,
-                scaleResolutionDownBy: browser.isFirefox() ? LD_SCALE_FACTOR : HD_SCALE_FACTOR
+                scaleResolutionDownBy: HD_SCALE_FACTOR
             }
         ];
     }
@@ -220,12 +220,7 @@ export class TPCUtils {
             }
         ];
 
-        // Firefox 72 has stopped parsing the legacy rid= parameters in simulcast attributes.
-        // eslint-disable-next-line max-len
-        // https://www.fxsitecompat.dev/en-CA/docs/2019/pt-and-rid-in-webrtc-simulcast-attributes-are-no-longer-supported/
-        const simulcastLine = browser.isFirefox() && browser.isVersionGreaterThan(71)
-            ? `recv ${SIM_LAYER_RIDS.join(';')}`
-            : `recv rid=${SIM_LAYER_RIDS.join(';')}`;
+        const simulcastLine = browser.isFirefox() && `recv ${SIM_LAYER_RIDS.join(';')}`;
 
         // eslint-disable-next-line camelcase
         sdp.media[idx].simulcast_03 = {
@@ -262,9 +257,7 @@ export class TPCUtils {
                 sendEncodings: []
             };
 
-            if (!browser.isFirefox()) {
-                transceiverInit.sendEncodings = this._getStreamEncodings(localTrack);
-            }
+            transceiverInit.sendEncodings = this._getStreamEncodings(localTrack);
             this.pc.peerconnection.addTransceiver(track, transceiverInit);
         } else {
             // Use pc.addTrack() for responder case so that we can re-use the m-lines that were created
