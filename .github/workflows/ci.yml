@@ -6,7 +6,10 @@ on:
       version:
         type: string
         description: "The version to build - defaults to SHA"
-        default: ${{ github.sha }}
+        required: false
+
+env:
+  VERSION: ${{ github.event.inputs.version || github.sha }}
 
 jobs:
   run-ci:
@@ -24,6 +27,6 @@ jobs:
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: v${{ inputs.version }}
-        body: "This is a release of lib-jitsi-meet version ${inputs.version}"
-        files: lib-jitsi-meet-${{ inputs.version }}.tgz
+        tag_name: v${{ env.VERSION }}
+        body: "This is a release of lib-jitsi-meet version ${env.VERSION}"
+        files: lib-jitsi-meet-${{ env.VERSION }}.tgz
