@@ -1576,14 +1576,19 @@ export default class JingleSessionPC extends JingleSession {
      * successful and rejected otherwise.
      */
     setSenderVideoConstraint(maxFrameHeight, sourceName = null) {
+        let maxToUse = maxFrameHeight;
+        if (!maxFrameHeight || maxFrameHeight < 0) {
+            maxToUse = 480;
+        }
+
         if (this._assertNotEnded()) {
-            logger.info(`${this} setSenderVideoConstraint: ${maxFrameHeight}, sourceName: ${sourceName}`);
+            logger.info(`${this} setSenderVideoConstraint: ${maxToUse}, sourceName: ${sourceName}`);
 
             const jitsiLocalTrack = sourceName
                 ? this.rtc.getLocalVideoTracks().find(track => track.getSourceName() === sourceName)
                 : this.rtc.getLocalVideoTrack();
 
-            return this.peerconnection.setSenderVideoConstraints(maxFrameHeight, jitsiLocalTrack);
+            return this.peerconnection.setSenderVideoConstraints(maxToUse, jitsiLocalTrack);
         }
 
         return Promise.resolve();
