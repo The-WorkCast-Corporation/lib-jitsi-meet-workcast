@@ -1577,6 +1577,7 @@ export default class JingleSessionPC extends JingleSession {
      */
     setSenderVideoConstraint(maxFrameHeight, sourceName = null) {
         let maxToUse = maxFrameHeight;
+
         if (!maxFrameHeight || maxFrameHeight < 0) {
             maxToUse = 480;
         }

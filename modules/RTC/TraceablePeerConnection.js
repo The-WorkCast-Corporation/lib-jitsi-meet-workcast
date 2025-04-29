@@ -315,7 +315,7 @@ export default function TraceablePeerConnection(
      * The height constraint applied on the video sender. The default value is 2160 (4K) when layer suspension is
      * explicitly disabled.
      */
-    this._senderVideoMaxHeight = 2160;
+    this._senderVideoMaxHeight = 720;
 
     /**
      * The height constraints to be applied on the sender per local video source (source name as the key).
@@ -2587,6 +2587,10 @@ TraceablePeerConnection.prototype.setRemoteDescription = function(description) {
 TraceablePeerConnection.prototype.setSenderVideoConstraints = function(frameHeight, localVideoTrack) {
     if (frameHeight < 0) {
         throw new Error(`Invalid frameHeight: ${frameHeight}`);
+    }
+
+    if (frameHeight === undefined) {
+        frameHeight = this._senderVideoMaxHeight;
     }
 
     const sourceName = localVideoTrack.getSourceName();
