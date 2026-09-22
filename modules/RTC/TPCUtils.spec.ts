@@ -4,6 +4,7 @@ import { MediaType } from '../../service/RTC/MediaType';
 import { SIM_LAYERS } from '../../service/RTC/StandardVideoQualitySettings';
 import { VideoEncoderScalabilityMode } from '../../service/RTC/VideoEncoderScalabilityMode';
 import { VideoType } from '../../service/RTC/VideoType';
+import browser from '../browser';
 
 import { MockJitsiLocalTrack, MockPeerConnection } from './MockClasses';
 import { TPCUtils } from './TPCUtils';
@@ -1852,6 +1853,40 @@ describe('TPCUtils', () => {
                 height = 0;
                 activeState = tpcUtils.calculateEncodingsActiveState(track, codec, height);
                 expect(activeState[0]).toBe(false);
+            });
+        });
+
+        describe('Firefox simulcast encodings order', () => {
+            beforeEach(() => {
+                spyOn(browser, 'isFirefox').and.returnValue(true);
+                spyOn(browser, 'supportsScalabilityModeAPI').and.returnValue(false);
+                spyOn(browser, 'isVersionLessThan').and.returnValue(false);
+                pc = new MockPeerConnection('1', true, true /* simulcast */);
+                pc._capScreenshareBitrate = false;
+                pc.videoTransferActive = true;
+                tpcUtils = new TPCUtils(pc, { videoQuality });
+            });
+
+            afterEach(() => {
+                pc = null;
+                tpcUtils = null;
+            });
+
+            it('orders desktop encodings lowest resolution first', () => {
+                const track = new MockJitsiLocalTrack(1440, MediaType.VIDEO, VideoType.DESKTOP);
+
+                expect(tpcUtils.calculateEncodingsScaleFactor(track, CodecMimeType.VP8, 2160))
+                    .toEqual(SIM_LAYERS.map(layer => layer.scaleFactor));
+                expect(tpcUtils.calculateEncodingsBitrates(track, CodecMimeType.VP8, 2160))
+                    .toEqual([ 200000, 500000, 2500000 ]);
+            });
+
+            it('still reverses camera encodings on Firefox older than 117', () => {
+                (browser.isVersionLessThan as jasmine.Spy).and.returnValue(true);
+                const track = new MockJitsiLocalTrack(720, MediaType.VIDEO, VideoType.CAMERA);
+
+                expect(tpcUtils.calculateEncodingsScaleFactor(track, CodecMimeType.VP8, 720))
+                    .toEqual(SIM_LAYERS.map(layer => layer.scaleFactor).reverse());
             });
         });
     });
