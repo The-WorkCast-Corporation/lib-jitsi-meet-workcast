@@ -3,6 +3,11 @@ name: Simple CI
 on:
   workflow_dispatch:
     inputs:
+      ref:
+        type: string
+        description: "The branch, tag or SHA to build"
+        required: true
+        default: master
       version:
         type: string
         description: "The version to build - defaults to SHA"
@@ -16,17 +21,24 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v4
       with:
-        node-version: '16.x'
+        ref: ${{ github.event.inputs.ref }}
+    # Branches based on newer upstream carry a .nvmrc; master predates it and still needs Node 16.
+    - name: Resolve Node version
+      id: node
+      run: echo "version=$( [ -f .nvmrc ] && cat .nvmrc || echo 16 )" >> "$GITHUB_OUTPUT"
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ steps.node.outputs.version }}
     - run: npm install
     - run: npm pack
     - name: Rename tar
-      run: mv lib-jitsi-meet*.tgz lib-jitsi-meet-${{ inputs.version }}.tgz
+      run: mv lib-jitsi-meet*.tgz lib-jitsi-meet-${{ env.VERSION }}.tgz
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ env.VERSION }}
-        body: "This is a release of lib-jitsi-meet version ${env.VERSION}"
+        target_commitish: ${{ github.event.inputs.ref }}
+        body: "This is a release of lib-jitsi-meet version ${{ env.VERSION }}"
         files: lib-jitsi-meet-${{ env.VERSION }}.tgz
