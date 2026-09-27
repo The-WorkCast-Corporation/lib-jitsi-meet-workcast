@@ -1896,6 +1896,18 @@ export default class ChatRoom extends Listenable {
 
 
     /**
+     * Alias of {@link addOrReplaceInPresence}, still called by our pinned Jibri build to announce its session.
+     *
+     * @param key The key to add or replace.
+     * @param values The new values.
+     * @returns {boolean|null}
+     * @deprecated Use 'addOrReplaceInPresence' instead.
+     */
+    addToPresence(key: string, values: any): Nullable<boolean> {
+        return this.addOrReplaceInPresence(key, values);
+    }
+
+    /**
      * Adds the key to the presence map, overriding any previous value.
      * @param key The key to add or replace.
      * @param values The new values.
