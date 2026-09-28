@@ -290,6 +290,11 @@ export class TrackStreamingStatusImpl {
         this._onUserLeft = this.onUserLeft.bind(this);
         this.conference.on(JitsiConferenceEvents.USER_LEFT, this._onUserLeft);
 
+        // Listened which will be bound to JitsiRemoteTrack to listen for signalling mute/unmute events. Needed on every
+        // browser, otherwise a status computed just before the mute signal arrives is never re-evaluated.
+        this._onSignallingMuteChanged = this.onSignallingMuteChanged.bind(this);
+        this.track.on(JitsiTrackEvents.TRACK_MUTE_CHANGED, this._onSignallingMuteChanged);
+
         // On some browsers MediaStreamTrack trigger "onmute"/"onunmute" events for video type tracks when they stop
         // receiving data which is often a sign that remote user is having connectivity issues.
         if (browser.supportsVideoMuteOnConnInterrupted()) {
@@ -299,10 +304,6 @@ export class TrackStreamingStatusImpl {
 
             this._onTrackRtcUnmuted = this.onTrackRtcUnmuted.bind(this);
             this.rtc.addListener(RTCEvents.REMOTE_TRACK_UNMUTE, this._onTrackRtcUnmuted);
-
-            // Listened which will be bound to JitsiRemoteTrack to listen for signalling mute/unmute events.
-            this._onSignallingMuteChanged = this.onSignallingMuteChanged.bind(this);
-            this.track.on(JitsiTrackEvents.TRACK_MUTE_CHANGED, this._onSignallingMuteChanged);
 
             // Used to send an analytics event when the video type changes.
             this._onTrackVideoTypeChanged = this.onTrackVideoTypeChanged.bind(this);
@@ -327,11 +328,12 @@ export class TrackStreamingStatusImpl {
      * Removes all event listeners and disposes of all resources held by this instance.
      */
     dispose(): void {
+        this.track.off(JitsiTrackEvents.TRACK_MUTE_CHANGED, this._onSignallingMuteChanged);
+
         if (browser.supportsVideoMuteOnConnInterrupted()) {
             this.rtc.removeListener(RTCEvents.REMOTE_TRACK_MUTE, this._onTrackRtcMuted);
             this.rtc.removeListener(RTCEvents.REMOTE_TRACK_UNMUTE, this._onTrackRtcUnmuted);
 
-            this.track.off(JitsiTrackEvents.TRACK_MUTE_CHANGED, this._onSignallingMuteChanged);
             this.track.off(JitsiTrackEvents.TRACK_VIDEOTYPE_CHANGED, this._onTrackVideoTypeChanged);
         } else if (this.track.isVideoTrack()) {
             this.conference.statistics.removeConnectionStatsListener(this._onConnectionStats);

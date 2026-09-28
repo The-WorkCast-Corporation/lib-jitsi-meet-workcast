@@ -297,6 +297,31 @@ describe('TrackStreamingStatusImpl init/dispose', () => {
                 mockRtc.emit(RTCEvents.REMOTE_TRACK_MUTE, mockTrack as any);
                 expect(mockTrack.getTrackStreamingStatus()).toBe(statusBefore);
             });
+
+            it('re-evaluates to ACTIVE when the signalling mute arrives after the source stopped being forwarded', () => {
+                mockRtc.removeForwardedSource(SOURCE_NAME);
+                impl.figureOutStreamingStatus();
+                expect(mockTrack.getTrackStreamingStatus()).toBe(TrackStreamingStatus.INACTIVE);
+
+                mockTrack.setMuted(true);
+                mockTrack.emit(JitsiTrackEvents.TRACK_MUTE_CHANGED, mockTrack as any);
+                expect(mockTrack.getTrackStreamingStatus()).toBe(TrackStreamingStatus.ACTIVE);
+            });
+
+            it('goes INACTIVE on unmute before forwarding resumes, then ACTIVE once the source is forwarded', () => {
+                mockRtc.removeForwardedSource(SOURCE_NAME);
+                mockTrack.setMuted(true);
+                mockTrack.emit(JitsiTrackEvents.TRACK_MUTE_CHANGED, mockTrack as any);
+                expect(mockTrack.getTrackStreamingStatus()).toBe(TrackStreamingStatus.ACTIVE);
+
+                mockTrack.setMuted(false);
+                mockTrack.emit(JitsiTrackEvents.TRACK_MUTE_CHANGED, mockTrack as any);
+                expect(mockTrack.getTrackStreamingStatus()).toBe(TrackStreamingStatus.INACTIVE);
+
+                mockRtc.addForwardedSource(SOURCE_NAME);
+                mockConference.emit(JitsiConferenceEvents.FORWARDED_SOURCES_CHANGED, [], [ SOURCE_NAME ], Date.now());
+                expect(mockTrack.getTrackStreamingStatus()).toBe(TrackStreamingStatus.ACTIVE);
+            });
         });
 
         describe('for an audio track', () => {
